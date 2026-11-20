@@ -1,0 +1,6 @@
+{
+  "name": "BoothScript",
+  "description": "Broadcast-grade speech-to-text studio for live microphone dictation with real-time waveform metering, editable transcripts, session history, and .txt export.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
