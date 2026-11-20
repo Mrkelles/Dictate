@@ -9,14 +9,21 @@ import React, {
 } from 'react';
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   Globe,
   Mic,
   Pause,
   Play,
   Square,
+  Type,
 } from 'lucide-react';
 import { DICTATION_LANGUAGES } from '@/lib/types';
 import { formatDuration } from '@/lib/transcript-utils';
+import {
+  formatSpokenPunctuation,
+  VOICE_PUNCTUATION_COMMANDS,
+} from '@/lib/voice-punctuation';
 
 interface SpeechRecognitionEventLike {
   resultIndex: number;
@@ -58,6 +65,10 @@ interface LiveDictationConsoleProps {
   onDurationTick: (seconds: number) => void;
   initialDuration: number;
   theme: 'light' | 'dark';
+  voicePunctuation: boolean;
+  onToggleVoicePunctuation: () => void;
+  existingText: string;
+  onInsertPunctuation: (insertText: string) => void;
 }
 
 type DictationStatus = 'idle' | 'listening' | 'paused';
@@ -80,6 +91,10 @@ export default function LiveDictationConsole({
   onDurationTick,
   initialDuration,
   theme,
+  voicePunctuation,
+  onToggleVoicePunctuation,
+  existingText,
+  onInsertPunctuation,
 }: LiveDictationConsoleProps) {
   const [status, setStatus] = useState<DictationStatus>('idle');
   const isSupported = useSyncExternalStore(
@@ -90,9 +105,13 @@ export default function LiveDictationConsole({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(initialDuration);
   const [interimText, setInterimText] = useState<string>('');
+  const [showCommandsGuide, setShowCommandsGuide] = useState(false);
 
   const statusRef = useRef<DictationStatus>('idle');
   const themeRef = useRef<'light' | 'dark'>(theme);
+  const voicePunctuationRef = useRef<boolean>(voicePunctuation);
+  const existingTextRef = useRef<string>(existingText);
+  const languageRef = useRef<string>(language);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -117,6 +136,18 @@ export default function LiveDictationConsole({
   useEffect(() => {
     onDurationTickRef.current = onDurationTick;
   }, [onDurationTick]);
+
+  useEffect(() => {
+    voicePunctuationRef.current = voicePunctuation;
+  }, [voicePunctuation]);
+
+  useEffect(() => {
+    existingTextRef.current = existingText;
+  }, [existingText]);
+
+  useEffect(() => {
+    languageRef.current = language;
+  }, [language]);
 
   const drawIdleWaveform = useCallback(() => {
     const canvas = canvasRef.current;
@@ -386,8 +417,15 @@ export default function LiveDictationConsole({
         if (finalized.trim()) {
           onAppendFinalRef.current(finalized.trim());
         }
-        setInterimText(interim.trim());
-        onInterimRef.current(interim.trim());
+        const formattedInterim = interim.trim()
+          ? formatSpokenPunctuation(interim, {
+              enabled: voicePunctuationRef.current,
+              existingText: existingTextRef.current,
+              language: languageRef.current,
+            })
+          : '';
+        setInterimText(formattedInterim);
+        onInterimRef.current(formattedInterim);
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
@@ -578,13 +616,87 @@ export default function LiveDictationConsole({
         />
       </div>
 
+      {/* Spoken Punctuation Bar & Commands Guide */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2.5 border-t border-zinc-200/80 dark:border-white/[0.06] pt-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={voicePunctuation}
+            onClick={onToggleVoicePunctuation}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+              voicePunctuation
+                ? 'border-amber-500/60 bg-amber-50 text-amber-800 dark:border-amber-500/45 dark:bg-amber-500/10 dark:text-amber-300'
+                : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-zinc-400 dark:hover:bg-white/[0.06]'
+            }`}
+          >
+            <Type className="h-3.5 w-3.5" />
+            <span>Voice Punctuation: {voicePunctuation ? 'On' : 'Off'}</span>
+          </button>
+
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            {voicePunctuation
+              ? 'Say "period", "comma", "question mark", or "new paragraph" as you speak.'
+              : 'Spoken punctuation words will be transcribed literally.'}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowCommandsGuide((prev) => !prev)}
+          aria-expanded={showCommandsGuide}
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] px-3 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.07] transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+        >
+          <span>Punctuation Commands</span>
+          {showCommandsGuide ? (
+            <ChevronUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
+
+      {showCommandsGuide && (
+        <div
+          aria-label="Spoken punctuation commands reference"
+          className="mt-3 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-[#F8F9FB] dark:bg-[#11141A] p-3.5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 text-xs text-zinc-500 dark:text-zinc-400">
+            <span>
+              Speak any phrase below while dictating, or click a command to insert it directly.
+            </span>
+            <span className="font-mono tabular-nums">
+              {VOICE_PUNCTUATION_COMMANDS.length} commands
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
+            {VOICE_PUNCTUATION_COMMANDS.map((cmd) => (
+              <button
+                key={cmd.id}
+                type="button"
+                onClick={() => onInsertPunctuation(cmd.insertText)}
+                title={`Say "${cmd.spokenExamples.join('" or "')}" — click to insert`}
+                className="flex items-center justify-between gap-2 rounded-md border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#161920] px-2.5 py-2 text-left text-xs hover:border-amber-500/50 hover:bg-amber-50/40 dark:hover:bg-amber-500/10 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              >
+                <span className="truncate text-zinc-700 dark:text-zinc-300">
+                  &ldquo;{cmd.spokenExamples[0]}&rdquo;
+                </span>
+                <span className="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 shrink-0">
+                  {cmd.symbolLabel}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Live interim speech preview */}
       {interimText && (
         <div className="mt-3 flex items-start gap-2.5 text-sm text-amber-700 dark:text-amber-300/90">
           <span className="font-mono text-[11px] uppercase tracking-wider text-amber-600 dark:text-amber-400/80 pt-1 shrink-0">
             Live
           </span>
-          <p className="leading-relaxed italic">{interimText}</p>
+          <p className="leading-relaxed italic whitespace-pre-wrap">{interimText}</p>
         </div>
       )}
 

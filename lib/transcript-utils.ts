@@ -1,3 +1,5 @@
+import { appendDictationChunk } from '@/lib/voice-punctuation';
+
 export function formatDuration(totalSeconds: number): string {
   if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '00:00';
   const rounded = Math.floor(totalSeconds);
@@ -40,8 +42,7 @@ export function combineLiveTranscript(
 ): string {
   const trimmedInterim = interimText.trim();
   if (!trimmedInterim) return plainText;
-  const needsSpace = plainText.length > 0 && !/[\s\n]$/.test(plainText);
-  return `${plainText}${needsSpace ? ' ' : ''}${trimmedInterim}`;
+  return appendDictationChunk(plainText, interimText);
 }
 
 export function countWordsAndChars(text: string): {

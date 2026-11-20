@@ -16,6 +16,11 @@ import {
 } from '@/lib/transcript-utils';
 import { exportTranscriptToPdf } from '@/lib/pdf-export';
 import {
+  appendDictationChunk,
+  formatSpokenPunctuation,
+  insertManualPunctuation,
+} from '@/lib/voice-punctuation';
+import {
   createBlankSession,
   readActiveSessionId,
   readStoredSessions,
@@ -33,6 +38,7 @@ export default function BoothStudio() {
   const [interimText, setInterimText] = useState('');
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [voicePunctuation, setVoicePunctuation] = useState(true);
   const [sessionResetNonce, setSessionResetNonce] = useState(0);
 
   const { theme } = useTheme();
@@ -136,15 +142,27 @@ export default function BoothStudio() {
   const handleAppendFinalDictation = useCallback(
     (finalChunk: string) => {
       updateActiveSession((prev) => {
-        const existing = prev.plainText;
-        const needsSpace =
-          existing.length > 0 && !/[\s\n]$/.test(existing);
-        const nextText = existing + (needsSpace ? ' ' : '') + finalChunk;
+        const formatted = formatSpokenPunctuation(finalChunk, {
+          enabled: voicePunctuation,
+          existingText: prev.plainText,
+          language: prev.language,
+        });
+        if (!formatted) return prev;
         return {
           ...prev,
-          plainText: nextText,
+          plainText: appendDictationChunk(prev.plainText, formatted),
         };
       });
+    },
+    [updateActiveSession, voicePunctuation]
+  );
+
+  const handleInsertManualPunctuation = useCallback(
+    (insertText: string) => {
+      updateActiveSession((prev) => ({
+        ...prev,
+        plainText: insertManualPunctuation(prev.plainText, insertText),
+      }));
     },
     [updateActiveSession]
   );
@@ -329,6 +347,12 @@ export default function BoothStudio() {
                 }))
               }
               theme={theme}
+              voicePunctuation={voicePunctuation}
+              onToggleVoicePunctuation={() =>
+                setVoicePunctuation((prev) => !prev)
+              }
+              existingText={activeSession?.plainText ?? ''}
+              onInsertPunctuation={handleInsertManualPunctuation}
             />
 
             {/* Editable Transcript Canvas */}
