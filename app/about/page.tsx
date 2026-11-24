@@ -13,7 +13,7 @@ const capabilities = [
   {
     index: '01.',
     title: 'Instant Live Dictation',
-    body: 'Powered by your browser’s built-in Web Speech API, BoothScript turns spoken words into editable text in real time across 16 regional language profiles with pause, resume, and stop controls.',
+    body: 'Powered by your browser’s built-in Web Speech API, BoothScript turns spoken words into editable text in real time across 40+ widely supported languages and regional dialects—with native spoken punctuation commands and pause, resume, and stop controls.',
   },
   {
     index: '02.',

@@ -61,8 +61,8 @@ export default function SiteHeader({
   return (
     <>
       {/* Strict 3-Zone Top Bar Contract */}
-      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 sm:gap-8 border-b border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#111318] px-4 sm:px-6 transition-colors duration-150">
-        {/* Zone 1: Brand Title + Mobile Hamburger Trigger */}
+      <header className="sticky top-0 z-30 flex h-14 w-full max-w-full shrink-0 items-center justify-between gap-3 lg:gap-6 xl:gap-8 border-b border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#111318] px-4 sm:px-6 transition-colors duration-150 overflow-x-clip">
+        {/* Zone 1: Brand Title + Mobile/Tablet Hamburger Trigger */}
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
@@ -84,7 +84,7 @@ export default function SiteHeader({
         {/* Zone 2: Main Menu Navigation Links + Theme Toggle */}
         <nav
           aria-label="Primary studio menu"
-          className="hidden md:flex items-center gap-6 text-sm font-medium"
+          className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-medium"
         >
           <Link href="/" className={navLinkClass('/')}>
             Dictation

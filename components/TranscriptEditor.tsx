@@ -18,6 +18,7 @@ interface TranscriptEditorProps {
   interimText: string;
   onPlainTextChange: (text: string) => void;
   onClearTranscript: () => void;
+  textDirection?: 'ltr' | 'rtl';
 }
 
 export default function TranscriptEditor({
@@ -25,6 +26,7 @@ export default function TranscriptEditor({
   interimText,
   onPlainTextChange,
   onClearTranscript,
+  textDirection = 'ltr',
 }: TranscriptEditorProps) {
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [findTerm, setFindTerm] = useState('');
@@ -184,12 +186,16 @@ export default function TranscriptEditor({
           <textarea
             value={plainText}
             onChange={(e) => onPlainTextChange(e.target.value)}
+            dir={textDirection}
             placeholder="Click Start Dictation and begin speaking. Your words will appear here in real time, and you can edit the transcript at any time."
             aria-label="Transcript text editor"
             className="min-h-[300px] w-full flex-1 resize-none bg-transparent text-[15px] sm:text-base leading-[1.7] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
           />
           {interimText && (
-            <p className="mt-2 border-t border-zinc-200 dark:border-white/[0.06] pt-2 text-sm italic text-amber-700 dark:text-amber-300/80">
+            <p
+              dir={textDirection}
+              className="mt-2 border-t border-zinc-200 dark:border-white/[0.06] pt-2 text-sm italic text-amber-700 dark:text-amber-300/80 whitespace-pre-wrap"
+            >
               {interimText}
             </p>
           )}

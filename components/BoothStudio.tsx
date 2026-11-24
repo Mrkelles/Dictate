@@ -20,6 +20,7 @@ import {
   formatSpokenPunctuation,
   insertManualPunctuation,
 } from '@/lib/voice-punctuation';
+import { isRtlLanguage } from '@/lib/languages';
 import {
   createBlankSession,
   readActiveSessionId,
@@ -359,6 +360,11 @@ export default function BoothStudio() {
             <TranscriptEditor
               plainText={activeSession?.plainText ?? ''}
               interimText={interimText}
+              textDirection={
+                isRtlLanguage(activeSession?.language ?? 'en-US')
+                  ? 'rtl'
+                  : 'ltr'
+              }
               onPlainTextChange={(text) =>
                 updateActiveSession((s) => ({ ...s, plainText: text }))
               }
